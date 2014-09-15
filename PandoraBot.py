@@ -65,8 +65,9 @@ class PandoraBot(object):
         while len(playList) < numSongs:
             songName = self.driver.find_element(By.XPATH, "//*[@id='trackInfo']/div/div[2]/div/div[1]/a").text
             artistName = self.driver.find_element(By.XPATH, "//*[@id='trackInfo']/div/div[2]/div/div[2]/a").text
-            print("Recorded: " + songName + " by " + artistName)
-            playList.append(songName + " by " + artistName)
+            if len(songName) > 0:
+                print("Recorded: " + songName + " by " + artistName)
+                playList.append(songName + " by " + artistName)
             remainingTime = self.driver.find_element(By.XPATH, "//*[@id='playbackControl']/div[2]/div[1]").text
             remainingTime = remainingTime[1:]
             remainingSeconds = (int(remainingTime.split(':')[0]) * 60) + int(remainingTime.split(':')[1])
