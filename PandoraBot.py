@@ -41,7 +41,7 @@ class PandoraBot(object):
         createStation.click()
         createStation.send_keys(firstArtist)
         print("Adding station for " + firstArtist)
-        sleep(0.5)
+        sleep(1.5)
         createStation.send_keys(Keys.ENTER)
         sleep(1)
         self.driver.get("http://www.pandora.com/")
