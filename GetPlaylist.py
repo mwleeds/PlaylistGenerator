@@ -3,7 +3,7 @@
 ##################################################################
 #
 # File: GetPlaylist.py
-# Last Edit: 9.21.14
+# Last Edit: 9.22.14
 # Author: Matthew Leeds
 # Purpose: Use PandoraBot and SpotifyBot to scrape songs from
 # their radio services.
@@ -20,13 +20,13 @@ def main():
     myPandora.addSeedArtists("testseeds.txt")
     myPandora.getSongs(23, "playlist.txt")
     myPandora.deleteStation()
-    print("Done.")
     '''
     mySpotify = SpotifyBot()
     mySpotify.login(USERNAME, PASSWORD)
-    #mySpotify.addSeedArtists("testseeds.txt")
+    mySpotify.addSeedArtists("testseeds.txt")
     mySpotify.getSongs(23, "playlist.txt")
-    input()
+    #mySpotify.deleteStation()
+    #mySpotify.deletePlaylist()
 
 if __name__=="__main__":
     main()

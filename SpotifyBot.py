@@ -3,7 +3,7 @@
 ##################################################################
 #
 # File: SpotifyBot.py
-# Last Edit: 9.21.14
+# Last Edit: 9.22.14
 # Author: Matthew Leeds
 # Purpose: A web crawler to get a playlist from Spotify Radio 
 # based on a list of seed artists. Unfortunately the Spotify 
@@ -24,16 +24,19 @@ class SpotifyBot(object):
         self.driver.implicitly_wait(30)
         self.playlistURL = ""
 
-    # logs in to spotify.com using the given credentials
+    # logs in to play.spotify.com using the given credentials
     def login(self, username, password):
         self.driver.get("https://play.spotify.com/")
         self.driver.find_element(By.ID, "has-account").click()
         sleep(0.5)
         self.driver.find_element(By.ID, "login-usr").send_keys(username)
-        sleep(0.5)
         self.driver.find_element(By.ID, "login-pass").send_keys(password)
-        sleep(0.5)
-        self.driver.find_element(By.XPATH, "//*[@id='sp-login-form']/div/button").click()
+        input("Click Log in and press enter...")
+        #loginbutton = self.driver.find_element(By.XPATH, "//*[@id='sp-login-form']/div[@class='inputs']/button")
+        #loginbutton.click()
+        #ActionChains(self.driver).move_to_element(loginbutton).click(loginbutton).perform()
+        #self.driver.find_element(By.ID, "sp-login-form").submit()
+
 
     # creates a station with the seed artists found in the specified input file
     def addSeedArtists(self, filename):
@@ -94,7 +97,7 @@ class SpotifyBot(object):
 
     # records song and artist names and writes them to a file
     def getSongs(self, numSongs, filename):
-        self.playlistURL = "https://play.spotify.com/user/aoeuhtns4/playlist/7ku7pWfd9zvtNWabeQ54sE"
+        #self.playlistURL = "https://play.spotify.com/user/aoeuhtns4/playlist/7ku7pWfd9zvtNWabeQ54sE"
         '''
         self.driver.get("https://play.spotify.com/collection")
         theframe = self.driver.find_element(By.XPATH, "//div[@id='main']/div[@id='section-collection']/div[@class='root']/iframe")
@@ -115,30 +118,58 @@ class SpotifyBot(object):
         sleep(5)
         self.driver.switch_to.default_content()
         self.driver.switch_to.frame("app-player")
-        print(self.driver.find_element(By.ID, "track-name-wrapper").text)
-        '''
         playList = []
         while len(playList) < numSongs:
-            songName = self.driver.find_element(By.XPATH, "//*[@id='trackInfo']/div/div[2]/div/div[1]/a").text
-            artistName = self.driver.find_element(By.XPATH, "//*[@id='trackInfo']/div/div[2]/div/div[2]/a").text
-            if len(songName) > 0:
+            # check if it's an ad
+            isAd = False
+            try:
+                isAd = (self.driver.find_element(By.XPATH, "//*[@id='track-name']/a").get_attribute("target") == "_blank")
+            except: 
+                pass # it's not an ad 
+            if not isAd:
+                songName = self.driver.find_element(By.ID, "track-name-wrapper").text
+                artistName = self.driver.find_element(By.ID, "artist-name-wrapper").text
                 print("Recorded: " + songName + " by " + artistName)
                 playList.append(songName + " by " + artistName)
-            remainingTime = self.driver.find_element(By.XPATH, "//*[@id='playbackControl']/div[2]/div[1]").text
-            remainingTime = remainingTime[1:]
-            remainingSeconds = (int(remainingTime.split(':')[0]) * 60) + int(remainingTime.split(':')[1])
-            print("Waiting " + str(remainingSeconds) + " seconds for the song to end.")
-            sleep(remainingSeconds + 5)
+            sleep(5)
+            playedTime = self.driver.find_element(By.ID, "track-current").text
+            playedTimeSeconds = (int(playedTime.split(':')[0]) * 60) + int(playedTime.split(':')[1])
+            trackLength = self.driver.find_element(By.ID, "track-length").text
+            trackLengthSeconds = (int(trackLength.split(':')[0]) * 60) + int(trackLength.split(':')[1])
+            remainingTime = trackLengthSeconds - playedTimeSeconds
+            print("Waiting " + str(remainingTime) + " seconds for the song to end.")
+            sleep(remainingTime + 5)
         print("Writing " + str(len(playList)) + " songs to " + filename)
         playlistFile = open(filename, 'w')
         for song in playList:
             playlistFile.write(song + "\n")
         playlistFile.close()
-        '''
 
-    # deletes a station so the next time the script runs it can assume there are none
+    # deletes the station so the next login will be the same
     def deleteStation(self):
-        pass
+        self.driver.get("https://play.spotify.com/radio")
+        theframe = self.driver.find_element(By.XPATH, "//div[@id='section-radio']/div/iframe")
+        self.driver.switch_to.frame(theframe)
+        # assume the most recent station is the one we want to delete
+        self.driver.find_element(By.ID, "recent").send_keys(Keys.ARROW_DOWN)
+        self.driver.find_element(By.ID, "recent").send_keys(Keys.ARROW_DOWN)
+        self.driver.find_element(By.ID, "recent").send_keys(Keys.ARROW_DOWN)
+        self.driver.find_element(By.ID, "recent").send_keys(Keys.ARROW_DOWN)
+        self.driver.find_element(By.ID, "recent").send_keys(Keys.ARROW_DOWN)
+        deletebutton = self.driver.find_element(By.XPATH, "//div[@id='carousel-inner']/div[1]/div[1]/div[1]/button[1]")
+        ActionChains(self.driver).move_to_element(deletebutton).click(deletebutton).perform()
+        #deletebutton.click()
+        
+    # we don't need the playlist any more either
+    def deletePlaylist(self):
+        self.driver.get(self.playlistURL)
+        theframe = self.driver.find_element(By.XPATH, "//div[@id='main']/div[@id='section-collection']/div[@class='root']/iframe")
+        self.driver.switch_to.frame(theframe)
+        self.driver.find_element(By.CSS_SELECTOR, "div.header-controllers > button.btn:nth-child(5)").click()
+        self.driver.switch_to.default_content()
+        self.driver.switch_to.frame("context-actions")
+        self.driver.find_element(By.ID, "delete-playlist").click()
+        self.driver.find_element(By.ID, "playlist-delete-confirm-button").click()
 
     def __del__(self):
         self.driver.quit()
