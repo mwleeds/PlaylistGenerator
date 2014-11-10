@@ -3,9 +3,9 @@
 ##################################################################
 #
 # File: PandoraBot.py
-# Last Edit: 9.11.14
+# Last Edit: 11.09.2014
 # Author: Matthew Leeds
-# Purpose: A web crawler to get a playlist from pandora based on 
+# Purpose: A web crawler to get a playlist from Pandora based on 
 # a list of seed artists.
 #
 ##################################################################
@@ -14,6 +14,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from time import sleep
+import csv
 
 class PandoraBot(object):
 
@@ -65,23 +66,45 @@ class PandoraBot(object):
 
     # records song and artist names and writes them to a file
     def getSongs(self, numSongs, filename):
+        # qualify the filename so we don't overwrite data from another source
+        filename = "Pandora_" + filename
         playList = []
         while len(playList) < numSongs:
+            #TODO: check for "Still listening?" or similar messages
+            # check if there's a video ad playing
+            videoAd = False
+            try:
+                video = self.driver.find_element(BY.ID, "videoPlayerContainer")
+                videoAd = video.is_displayed()
+            except:
+                pass
+            if videoAd:
+                sleep(30)
+                continue
             songName = self.driver.find_element(By.XPATH, "//*[@id='trackInfo']/div/div[2]/div/div[1]/a").text
             artistName = self.driver.find_element(By.XPATH, "//*[@id='trackInfo']/div/div[2]/div/div[2]/a").text
-            if len(songName) > 0:
-                print("Recorded: " + songName + " by " + artistName)
-                playList.append(songName + " by " + artistName)
             remainingTime = self.driver.find_element(By.XPATH, "//*[@id='playbackControl']/div[2]/div[1]").text
             remainingTime = remainingTime[1:]
             remainingSeconds = (int(remainingTime.split(':')[0]) * 60) + int(remainingTime.split(':')[1])
+            if len(songName) > 0:
+                print("Recorded: " + songName + " by " + artistName)
+                playList.append(songName + " by " + artistName)
+            else:
+                # wait for the ad to end
+                print("Waiting for ad to end.")
+                sleep(remainingSeconds + 2)
+                continue
+            print("Saving to disk.")
+            records = []
+            for song in playList:
+                records.append([song, "", "", ""])
+            with open(filename, "w") as csvfile:
+                writer = csv.writer(csvfile, quoting=csv.QUOTE_ALL)
+                writer.writerow(["Song", "Like?", "Dislike?", "New?"])
+                writer.writerows(records)
             print("Waiting " + str(remainingSeconds) + " seconds for the song to end.")
             sleep(remainingSeconds + 5)
-        print("Writing " + str(len(playList)) + " songs to " + filename)
-        playlistFile = open(filename, 'w')
-        for song in playList:
-            playlistFile.write(song + "\n")
-        playlistFile.close()
+        print(str(len(playList)) + " songs written to " + filename)
 
     # deletes a station so the next time the script runs it can assume there are none
     def deleteStation(self):

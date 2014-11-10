@@ -1,32 +1,49 @@
 #!/usr/bin/python3
 
-##################################################################
+#######################################################################
 #
 # File: GetPlaylist.py
-# Last Edit: 9.22.14
+# Last Edit: 11.09.2014
 # Author: Matthew Leeds
 # Purpose: Use PandoraBot and SpotifyBot to scrape songs from
-# their radio services.
+# their radio services. To use, run something like:
+# $ python3 GetPlaylist.py Pandora email pass seed.txt 20 playlist.csv
 #
-##################################################################
+#######################################################################
 
+import sys
+import traceback
 from PandoraBot import PandoraBot
 from SpotifyBot import SpotifyBot
 
 def main():
-    '''
-    myPandora = PandoraBot()
-    myPandora.login(USERNAME, PASSWORD)
-    myPandora.addSeedArtists("testseeds.txt")
-    myPandora.getSongs(23, "playlist.txt")
-    myPandora.deleteStation()
-    '''
-    mySpotify = SpotifyBot()
-    mySpotify.login(USERNAME, PASSWORD)
-    mySpotify.addSeedArtists("testseeds.txt")
-    mySpotify.getSongs(23, "playlist.txt")
-    #mySpotify.deleteStation()
-    #mySpotify.deletePlaylist()
+    if len(sys.argv) < 7:
+        print("Too few arguments given. Syntax:")
+        print("python3 GetPlaylist.py SERVICENAME USERNAME PASSWORD SEEDFILENAME NUMSONGS OUTFILENAME")
+        return
+    else:
+        NSERVICE = sys.argv[1]
+        USERNAME = sys.argv[2]
+        PASSWORD = sys.argv[3]
+        SEEDFILE = sys.argv[4]
+        NUMSONGS = sys.argv[5]
+        SONGFILE = sys.argv[6]
+    if NSERVICE == "Pandora": 
+        myPandora = PandoraBot()
+        myPandora.login(USERNAME, PASSWORD)
+        myPandora.addSeedArtists(SEEDFILE)
+        try:
+            myPandora.getSongs(NUMSONGS, SONGFILE)
+        except:
+            traceback.print_exc(file=sys.stdout)
+        myPandora.deleteStation()
+    else if NSERVICE == "Spotify":
+        mySpotify = SpotifyBot()
+        mySpotify.login(USERNAME, PASSWORD)
+        mySpotify.addSeedArtists(SEEDFILE)
+        mySpotify.getSongs(NUMSONGS, SONGFILE)
+        #mySpotify.deleteStation()
+        #mySpotify.deletePlaylist()
 
 if __name__=="__main__":
     main()
