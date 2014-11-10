@@ -70,7 +70,18 @@ class PandoraBot(object):
         filename = "Pandora_" + filename
         playList = []
         while len(playList) < numSongs:
-            #TODO: check for "Still listening?" or similar messages
+            # check if Pandora is asking if we're still there
+            isInactive = False
+            try:
+                stillListeningContainer = self.driver.find_element(By.CSS_SELECTOR, "still_listening_container")
+                isInactive = stillListeningContainer.is_displayed()
+                if not isInactive and self.driver.current_url in ["http://www.pandora.com/inactive", "http://www.pandora.com/inactive/"]:
+                    isInactive = True
+            except:
+                pass
+            if isInactive:
+                self.driver.find_element(By.ID, "still_listening_ignore").click()
+                sleep(5)
             # check if there's a video ad playing
             videoAd = False
             try:
