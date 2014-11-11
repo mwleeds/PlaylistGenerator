@@ -3,7 +3,7 @@
 ##################################################################
 #
 # File: SpotifyBot.py
-# Last Edit:11.09.2014
+# Last Edit: 11.10.2014
 # Author: Matthew Leeds
 # Purpose: A web crawler to get a playlist from Spotify Radio 
 # based on a list of seed artists. Unfortunately the Spotify 
@@ -22,6 +22,7 @@ class SpotifyBot(object):
 
     def __init__(self):
         self.driver = webdriver.Firefox()
+        self.driver.maximize_window()
         self.driver.implicitly_wait(30)
         self.playlistURL = ""
 
@@ -38,7 +39,6 @@ class SpotifyBot(object):
         #ActionChains(self.driver).move_to_element(loginbutton).click(loginbutton).perform()
         #self.driver.find_element(By.ID, "sp-login-form").submit()
 
-
     # creates a station with the seed artists found in the specified input file
     def addSeedArtists(self, filename):
         seedArtists = open(filename, 'r')
@@ -46,6 +46,7 @@ class SpotifyBot(object):
         # create a new playlist
         self.driver.find_element(By.ID, "nav-collection").click() # go to "Your Music"
         self.driver.get("https://play.spotify.com/collection")
+        self.driver.switch_to.default_content()
         theframe = self.driver.find_element(By.XPATH, "/html/body/div[2]/div[4]/div[3]/div[1]/iframe")
         self.driver.switch_to.frame(theframe)
         self.driver.find_element(By.XPATH, "/html/body/div[4]/div/nav/div/div[1]").click() # click "New Playlist"
@@ -54,14 +55,18 @@ class SpotifyBot(object):
         sleep(0.5)
         self.driver.find_element(By.XPATH, "/html/body/div[4]/div/nav/div/div[3]/form/div[2]/button").click()
         sleep(1)
+        self.driver.switch_to.default_content()
         self.playlistURL = self.driver.current_url
         for i in range(len(seedArtistList)):
             self.driver.get("https://play.spotify.com/collection")
+            sleep(1)
+            self.driver.find_element(By.ID, "main-nav").send_keys(Keys.PAGE_UP)
             currentArtist = seedArtistList[i][:len(seedArtistList[i]) - 1]
             print("Adding songs by " + currentArtist + " to the playlist")
             self.driver.find_element(By.XPATH, "//*[@id='nav-search']/span").click() # go to "Search"
             sleep(0.5)
-            self.driver.switch_to.frame("suggest")
+            searchframe = self.driver.find_element(By.ID, "suggest")
+            self.driver.switch_to.frame(searchframe)
             self.driver.find_element(By.XPATH, "/html/body/div[1]/form/input").send_keys("artist:" + currentArtist)
             sleep(2)
             # see all results so there is consistent behavior on subsequent searches
@@ -71,7 +76,11 @@ class SpotifyBot(object):
             theframe = self.driver.find_element(By.XPATH, "//div[@id='section-collection']/div[@class='front']/iframe")
             self.driver.switch_to.frame(theframe)
             # assume the top result is the right one
-            self.driver.find_element(By.XPATH, "/html/body/div[1]/section[2]/section[1]/ul/li[1]/div/div/div[2]/div/a").click()
+            try:
+                self.driver.find_element(By.XPATH, "/html/body/div[1]/section[2]/section[1]/ul/li[1]/div/div/div[2]/div/a").click()
+            except:
+                # no results
+                continue
             for j in range(3): # grab their top three songs
                 self.driver.switch_to.default_content()
                 theframe = self.driver.find_element(By.XPATH, "//div[@id='section-collection']/div[@class='front']/iframe")
@@ -100,7 +109,6 @@ class SpotifyBot(object):
     def getSongs(self, numSongs, filename):
         # qualify the filename so we don't overwrite data from another source
         filename = "Pandora_" + filename
-        #self.playlistURL = "https://play.spotify.com/user/aoeuhtns4/playlist/7ku7pWfd9zvtNWabeQ54sE"
         '''
         self.driver.get("https://play.spotify.com/collection")
         theframe = self.driver.find_element(By.XPATH, "//div[@id='main']/div[@id='section-collection']/div[@class='root']/iframe")

@@ -3,7 +3,7 @@
 #######################################################################
 #
 # File: GetPlaylist.py
-# Last Edit: 11.09.2014
+# Last Edit: 11.10.2014
 # Author: Matthew Leeds
 # Purpose: Use PandoraBot and SpotifyBot to scrape songs from
 # their radio services. To use, run something like:
@@ -33,15 +33,15 @@ def main():
         myPandora.login(USERNAME, PASSWORD)
         myPandora.addSeedArtists(SEEDFILE)
         try:
-            myPandora.getSongs(NUMSONGS, SONGFILE)
+            myPandora.getSongs(int(NUMSONGS), SONGFILE)
         except:
             traceback.print_exc(file=sys.stdout)
         myPandora.deleteStation()
-    else if NSERVICE == "Spotify":
+    elif NSERVICE == "Spotify":
         mySpotify = SpotifyBot()
         mySpotify.login(USERNAME, PASSWORD)
         mySpotify.addSeedArtists(SEEDFILE)
-        mySpotify.getSongs(NUMSONGS, SONGFILE)
+        mySpotify.getSongs(int(NUMSONGS), SONGFILE)
         #mySpotify.deleteStation()
         #mySpotify.deletePlaylist()
 
